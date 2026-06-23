@@ -62,7 +62,17 @@ class LXMFAPRSBridge:
         # Initialise LXMF router
         log.info("Starting LXMF router...")
         self.router = LXMF.LXMRouter(storagepath=storage_path)
-        self.identity = RNS.Identity()
+
+        # Load or create persistent identity so the LXMF hash is stable across restarts
+        identity_path = os.path.join(storage_path, "bridge_identity")
+        if os.path.exists(identity_path):
+            self.identity = RNS.Identity.from_file(identity_path)
+            log.info(f"Loaded existing identity from {identity_path}")
+        else:
+            self.identity = RNS.Identity()
+            self.identity.to_file(identity_path)
+            log.info(f"Created new identity, saved to {identity_path}")
+
         self.destination = self.router.register_delivery_identity(
             self.identity,
             display_name="LXMF-APRS Bridge",
